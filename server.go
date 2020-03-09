@@ -1489,7 +1489,14 @@ func writeStatusLine(bw *bufio.Writer, is11 bool, code int, scratch []byte) {
 	} else {
 		bw.WriteString("HTTP/1.0 ")
 	}
-	if text, ok := statusText[code]; ok {
+	var text string
+	var ok bool
+	if customSingleResponseStatus {
+		text, ok = getStatusText(code)
+	} else {
+		text, ok = statusText[code]
+	}
+	if ok {
 		bw.Write(strconv.AppendInt(scratch[:0], int64(code), 10))
 		bw.WriteByte(' ')
 		bw.WriteString(text)

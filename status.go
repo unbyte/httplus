@@ -4,6 +4,8 @@
 
 package http
 
+import "sync"
+
 // HTTP status codes as registered with IANA.
 // See: https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
 const (
@@ -76,77 +78,133 @@ const (
 	StatusNetworkAuthenticationRequired = 511 // RFC 6585, 6
 )
 
-var statusText = map[int]string{
-	StatusContinue:           "Continue",
-	StatusSwitchingProtocols: "Switching Protocols",
-	StatusProcessing:         "Processing",
-	StatusEarlyHints:         "Early Hints",
+var (
+	statusText = map[int]string{
+		StatusContinue:           "Continue",
+		StatusSwitchingProtocols: "Switching Protocols",
+		StatusProcessing:         "Processing",
+		StatusEarlyHints:         "Early Hints",
 
-	StatusOK:                   "OK",
-	StatusCreated:              "Created",
-	StatusAccepted:             "Accepted",
-	StatusNonAuthoritativeInfo: "Non-Authoritative Information",
-	StatusNoContent:            "No Content",
-	StatusResetContent:         "Reset Content",
-	StatusPartialContent:       "Partial Content",
-	StatusMultiStatus:          "Multi-Status",
-	StatusAlreadyReported:      "Already Reported",
-	StatusIMUsed:               "IM Used",
+		StatusOK:                   "OK",
+		StatusCreated:              "Created",
+		StatusAccepted:             "Accepted",
+		StatusNonAuthoritativeInfo: "Non-Authoritative Information",
+		StatusNoContent:            "No Content",
+		StatusResetContent:         "Reset Content",
+		StatusPartialContent:       "Partial Content",
+		StatusMultiStatus:          "Multi-Status",
+		StatusAlreadyReported:      "Already Reported",
+		StatusIMUsed:               "IM Used",
 
-	StatusMultipleChoices:   "Multiple Choices",
-	StatusMovedPermanently:  "Moved Permanently",
-	StatusFound:             "Found",
-	StatusSeeOther:          "See Other",
-	StatusNotModified:       "Not Modified",
-	StatusUseProxy:          "Use Proxy",
-	StatusTemporaryRedirect: "Temporary Redirect",
-	StatusPermanentRedirect: "Permanent Redirect",
+		StatusMultipleChoices:   "Multiple Choices",
+		StatusMovedPermanently:  "Moved Permanently",
+		StatusFound:             "Found",
+		StatusSeeOther:          "See Other",
+		StatusNotModified:       "Not Modified",
+		StatusUseProxy:          "Use Proxy",
+		StatusTemporaryRedirect: "Temporary Redirect",
+		StatusPermanentRedirect: "Permanent Redirect",
 
-	StatusBadRequest:                   "Bad Request",
-	StatusUnauthorized:                 "Unauthorized",
-	StatusPaymentRequired:              "Payment Required",
-	StatusForbidden:                    "Forbidden",
-	StatusNotFound:                     "Not Found",
-	StatusMethodNotAllowed:             "Method Not Allowed",
-	StatusNotAcceptable:                "Not Acceptable",
-	StatusProxyAuthRequired:            "Proxy Authentication Required",
-	StatusRequestTimeout:               "Request Timeout",
-	StatusConflict:                     "Conflict",
-	StatusGone:                         "Gone",
-	StatusLengthRequired:               "Length Required",
-	StatusPreconditionFailed:           "Precondition Failed",
-	StatusRequestEntityTooLarge:        "Request Entity Too Large",
-	StatusRequestURITooLong:            "Request URI Too Long",
-	StatusUnsupportedMediaType:         "Unsupported Media Type",
-	StatusRequestedRangeNotSatisfiable: "Requested Range Not Satisfiable",
-	StatusExpectationFailed:            "Expectation Failed",
-	StatusTeapot:                       "I'm a teapot",
-	StatusMisdirectedRequest:           "Misdirected Request",
-	StatusUnprocessableEntity:          "Unprocessable Entity",
-	StatusLocked:                       "Locked",
-	StatusFailedDependency:             "Failed Dependency",
-	StatusTooEarly:                     "Too Early",
-	StatusUpgradeRequired:              "Upgrade Required",
-	StatusPreconditionRequired:         "Precondition Required",
-	StatusTooManyRequests:              "Too Many Requests",
-	StatusRequestHeaderFieldsTooLarge:  "Request Header Fields Too Large",
-	StatusUnavailableForLegalReasons:   "Unavailable For Legal Reasons",
+		StatusBadRequest:                   "Bad Request",
+		StatusUnauthorized:                 "Unauthorized",
+		StatusPaymentRequired:              "Payment Required",
+		StatusForbidden:                    "Forbidden",
+		StatusNotFound:                     "Not Found",
+		StatusMethodNotAllowed:             "Method Not Allowed",
+		StatusNotAcceptable:                "Not Acceptable",
+		StatusProxyAuthRequired:            "Proxy Authentication Required",
+		StatusRequestTimeout:               "Request Timeout",
+		StatusConflict:                     "Conflict",
+		StatusGone:                         "Gone",
+		StatusLengthRequired:               "Length Required",
+		StatusPreconditionFailed:           "Precondition Failed",
+		StatusRequestEntityTooLarge:        "Request Entity Too Large",
+		StatusRequestURITooLong:            "Request URI Too Long",
+		StatusUnsupportedMediaType:         "Unsupported Media Type",
+		StatusRequestedRangeNotSatisfiable: "Requested Range Not Satisfiable",
+		StatusExpectationFailed:            "Expectation Failed",
+		StatusTeapot:                       "I'm a teapot",
+		StatusMisdirectedRequest:           "Misdirected Request",
+		StatusUnprocessableEntity:          "Unprocessable Entity",
+		StatusLocked:                       "Locked",
+		StatusFailedDependency:             "Failed Dependency",
+		StatusTooEarly:                     "Too Early",
+		StatusUpgradeRequired:              "Upgrade Required",
+		StatusPreconditionRequired:         "Precondition Required",
+		StatusTooManyRequests:              "Too Many Requests",
+		StatusRequestHeaderFieldsTooLarge:  "Request Header Fields Too Large",
+		StatusUnavailableForLegalReasons:   "Unavailable For Legal Reasons",
 
-	StatusInternalServerError:           "Internal Server Error",
-	StatusNotImplemented:                "Not Implemented",
-	StatusBadGateway:                    "Bad Gateway",
-	StatusServiceUnavailable:            "Service Unavailable",
-	StatusGatewayTimeout:                "Gateway Timeout",
-	StatusHTTPVersionNotSupported:       "HTTP Version Not Supported",
-	StatusVariantAlsoNegotiates:         "Variant Also Negotiates",
-	StatusInsufficientStorage:           "Insufficient Storage",
-	StatusLoopDetected:                  "Loop Detected",
-	StatusNotExtended:                   "Not Extended",
-	StatusNetworkAuthenticationRequired: "Network Authentication Required",
-}
+		StatusInternalServerError:           "Internal Server Error",
+		StatusNotImplemented:                "Not Implemented",
+		StatusBadGateway:                    "Bad Gateway",
+		StatusServiceUnavailable:            "Service Unavailable",
+		StatusGatewayTimeout:                "Gateway Timeout",
+		StatusHTTPVersionNotSupported:       "HTTP Version Not Supported",
+		StatusVariantAlsoNegotiates:         "Variant Also Negotiates",
+		StatusInsufficientStorage:           "Insufficient Storage",
+		StatusLoopDetected:                  "Loop Detected",
+		StatusNotExtended:                   "Not Extended",
+		StatusNetworkAuthenticationRequired: "Network Authentication Required",
+	}
+	customStatusText = map[int]string{}
+
+	customSingleResponseStatus = false
+
+	toggleLock     sync.Mutex
+	editGlobalLock sync.Mutex
+	editSingleLock sync.Mutex
+)
 
 // StatusText returns a text for the HTTP status code. It returns the empty
 // string if the code is unknown.
 func StatusText(code int) string {
 	return statusText[code]
+}
+
+// Add or update status code and corresponding status text.
+// Modifies will affect all responses and requests.
+func AddGlobalCustomStatus(code int, text string) {
+	editGlobalLock.Lock()
+	statusText[code] = text
+	editGlobalLock.Unlock()
+}
+
+// true to use special rule when process status, false to not use
+//
+// rule:
+//
+// status in [100..102] or [200..207] or [300..307] or [500..510] or [600] == status + 20 to use custom status text
+//
+// status in [400..451] == status + 240 to use custom status text
+//
+// Don't let your global custom status be in [120..122] [220..227] [320..327] [520..530] [620] [640..691] if you want to
+//control single response status text at the same time, because global custom status will cover single custom status
+func EnableSingleCustomRule(enabled bool) {
+	toggleLock.Lock()
+	customSingleResponseStatus = enabled
+	toggleLock.Unlock()
+}
+
+// Add or update status code and corresponding status text.
+//
+// Modifies will affect all responses which status is within the specified range,
+// see ToggleSingleResponseStatus(enabled bool)
+func AddCustomStatus(code int, text string) {
+	editSingleLock.Lock()
+	customStatusText[code] = text
+	editSingleLock.Unlock()
+}
+
+func getStatusText(code int) (string, bool) {
+	var text string
+	var ok bool
+	if text, ok = statusText[code]; ok {
+		return text, ok
+	}
+	if text, ok = customStatusText[code-20]; ok {
+		return text, ok
+	}
+	text, ok = customStatusText[code-240]
+	return text, ok
 }
