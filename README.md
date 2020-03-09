@@ -2,7 +2,7 @@
 
 ![go version](https://img.shields.io/badge/Go-1.14-blue?style=flat-square)
 
-> HTTPLUS provides is compatible with the original `net/http` but provides more functions
+> HTTPLUS is compatible with the original `net/http` but provides more functions
 
 ## Usage
 
@@ -20,7 +20,7 @@ And replace this library with [this](https://github.com/unbyte/httplus/tree/orig
 http.AddGlobalCustomStatus(code int,text string)
 ```
 
-Global custom status override any defined status, including standard status
+Global custom status overrides any defined status, including standard status
 
 ##### Example
 ```go
