@@ -1492,7 +1492,7 @@ func writeStatusLine(bw *bufio.Writer, is11 bool, code int, scratch []byte) {
 	var text string
 	var ok bool
 	if customSingleResponseStatus {
-		text, ok = getStatusText(code)
+		code, text, ok = getStatusText(code)
 	} else {
 		text, ok = statusText[code]
 	}

@@ -196,15 +196,19 @@ func AddCustomStatus(code int, text string) {
 	editSingleLock.Unlock()
 }
 
-func getStatusText(code int) (string, bool) {
+func getStatusText(code int) (int, string, bool) {
 	var text string
 	var ok bool
 	if text, ok = statusText[code]; ok {
-		return text, ok
+		return code, text, true
 	}
-	if text, ok = customStatusText[code-20]; ok {
-		return text, ok
+	code = code - 20
+	if text, ok = customStatusText[code]; ok {
+		return code, text, true
 	}
-	text, ok = customStatusText[code-240]
-	return text, ok
+	code = code - 220
+	if text, ok = customStatusText[code]; ok {
+		return code, text, true
+	}
+	return code + 240, "", false
 }
